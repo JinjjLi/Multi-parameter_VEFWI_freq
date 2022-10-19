@@ -26,6 +26,7 @@ std::tuple<float, Eigen::MatrixXf> VE_Gradient(Eigen::RowVectorXf& freq, Eigen::
     Eigen::RowVectorXf ss_ind, ind_M11, ind_M12, ind_M22;
     std::tie(ss_ind, ind_M11, ind_M12, ind_M22) = ind;
 
+
     Eigen::RowVectorXf M11_sur, M12_sur, M22_sur;
     std::tie(M11_sur, M12_sur, M22_sur) = MT_sur;
 
@@ -44,8 +45,6 @@ std::tuple<float, Eigen::MatrixXf> VE_Gradient(Eigen::RowVectorXf& freq, Eigen::
         MADI[i].setZero();
     }
     Eigen::SparseMatrix<std::complex<float>> A(2 * nxPML * nzPML, 2 * nxPML * nzPML);
-    //Eigen::SparseMatrix<std::complex<float>> temp(nzPML * nxPML * 2, S.cols());
-    //Eigen::SparseMatrix<std::complex<float>> fcoeff(fwave.cols(), fwave.cols());
     Eigen::SparseMatrix<std::complex<float>> Gs(nzPML * nxPML * 2, S.cols());
     Eigen::SparseMatrix<std::complex<double>> Gs_temp(nzPML * nxPML * 2, S.cols());
     Eigen::SparseMatrix<std::complex<double>> lamb_temp(nzPML * nxPML * 2, S.cols());
@@ -63,7 +62,6 @@ Eigen::initParallel();
 
     for (int n = 0; n < freq.size(); n++){
         float omega = 2 * pi * freq(n);
-
         bool flag = Make_Helm_Anelastic_and_Derivative_efficiency(MADI, ssmodel, \
                                                       nx, nz, \
                                                       omega, omega0, \

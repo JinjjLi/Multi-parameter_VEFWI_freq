@@ -13,10 +13,10 @@ bool Get_data_anelastic(std::vector<Eigen::SparseMatrix<std::complex<float>>>& D
     std::vector<Eigen::SparseMatrix<std::complex<float>>> U(freq.size());
     bool flag_par = par_FDFD_anelastic(MODEL, freq, omega0, S, fwave, U, PML_thick, nz, nx, dz);
     //std::vector<Eigen::MatrixXcf> D(freq.size());
-//Eigen::initParallel();
-//int nthreads = Eigen::nbThreads();
+Eigen::initParallel();
+int nthreads = Eigen::nbThreads();
 //#pragma omp parallel firstprivate(R, U)
-//#pragma omp for
+#pragma omp for
     for (int i = 0; i < freq.size(); i++)
         D[i] = R * U[i];
     //for (int i = 0; i < 1; i++){

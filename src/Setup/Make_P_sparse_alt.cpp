@@ -5,6 +5,7 @@
 std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
         Make_P_sparse_alt(int nz, int nx, int PML_thick, int grid_int, \
                           int var_smooth){
+            
             int nzPML = nz + 2 * PML_thick; int nxPML = nx + 2 * PML_thick;
             int NN = nz * nx; int NPML = nzPML * nxPML;
 
@@ -14,6 +15,7 @@ std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
             Eigen::RowVectorXf z_cent = Eigen::RowVectorXf::LinSpaced(z_cent_num, round(grid_int / 2), nz - 1);
             Eigen::RowVectorXf x_cent = Eigen::RowVectorXf::LinSpaced(x_cent_num, round(grid_int / 2), nx - 1);
             z_cent.cast<int>(); x_cent.cast<int>();
+
 
             int Plength = z_cent.size() * x_cent.size();
             Eigen::MatrixXf temp = Eigen::MatrixXf(6 * var_smooth + 1, 6 * var_smooth + 1);
@@ -40,6 +42,7 @@ std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
                 temp_small(i) = temp(indices[i].first, indices[i].second);
             }
             z_in = z_in.array() - midp; x_in = x_in.array() - midp;
+
 
             Eigen::MatrixXi z_inds = Eigen::MatrixXi(temp_small.size(), Plength);
             Eigen::MatrixXi x_inds = Eigen::MatrixXi(temp_small.size(), Plength);
@@ -86,6 +89,8 @@ std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
                  }
                 z_in_inds.clear(); z_in_inds.shrink_to_fit();
             }
+
+
             Eigen::MatrixXi Loc_inds = z_inds.array() + x_inds.array() * nz;
             Eigen::MatrixXi P_inds = Eigen::MatrixXi::Constant(Loc_inds.rows(), Loc_inds.cols(), 1);
             Eigen::RowVectorXf Plen(Plength);
@@ -109,13 +114,9 @@ std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
             }
 
             P.setFromTriplets(triplet.begin(), triplet.end());                                                                       
+
+
             triplet.clear(); triplet.shrink_to_fit();
-            //for (int i = 0; i < vals.rows(); i++){
-            //    for (int j = 0; j < Plength; j++){
-            //        if (vals(i, j))
-            //            P.coeffRef(Loc_inds(i, j), P_inds(i, j)) = vals(i, j);
-            //    }
-            //}
             Eigen::SparseMatrix<float> P_diag(P.rows() * 5, P.cols() * 5);
             //P_diag.reserve(P.nonZeros() * 5);
             typedef Eigen::Triplet<float> T;
@@ -132,18 +133,6 @@ std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
             P_diag.setFromTriplets(triplets.begin(), triplets.end());
             triplets.clear(); triplets.shrink_to_fit();
 
-            //std::cout << "P_diag = " << std::endl;
-            //for (int i = 0; i < P_diag.outerSize(); ++i){
-            //    for (Eigen::SparseMatrix<float>::InnerIterator it(P_diag, i); it; ++it){
-            //        if (it.value()){
-            //            std::cout << "(" << it.row() << ","; // row index
-            //            std::cout << it.col() << ")\t"; // col index (here it is equal to i)
-            //            std::cout << " = " << it.value() << std::endl;
-            //            count++;
-            //        }
-            //    }
-            //}
-            //std::cout << count << std::endl;
 
             P_big.reserve(P.nonZeros() * 2);
             for (int n = 0; n < Plength; n++){
@@ -180,22 +169,6 @@ std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>> \
             }
             P_big_diag.setFromTriplets(triplets2.begin(), triplets2.end());
             triplets2.clear(); triplets2.shrink_to_fit();
-            //for (int i = 0; i < 5; i++){
-            //    for (int m = 0; m < P_big.rows(); m++){
-            //        for (int n = 0; n < P_big.cols(); n++)
-            //            P_big_diag.coeffRef(i * P_big.rows() + m, i * P_big.cols() + n) = P_big.coeffRef(m, n);
-            //    }
-            //}
-            //std::cout << "P_big_diag = " << std::endl;
-            //for (int i = 0; i < P_big_diag.outerSize(); ++i){
-            //    for (Eigen::SparseMatrix<float>::InnerIterator it(P_big_diag, i); it; ++it){
-            //        if (it.value()){
-            //            std::cout << "(" << it.row() << ","; // row index
-            //            std::cout << it.col() << ")\t"; // col index (here it is equal to i)
-            //            std::cout << " = " << it.value() << std::endl;
-            //        }
-            //    }
-            //}
             z_cent.resize(0); x_cent.resize(0);
             temp.resize(0, 0); temp_small.resize(0);
             indices.clear(); indices.shrink_to_fit();
