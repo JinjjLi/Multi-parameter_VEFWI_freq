@@ -38,7 +38,6 @@ class Inversion_VE
         Setup_par_VE* this_par_alias;
         Forward_VE* this_Forward_alias;
 
-        std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf> MT_sur;                                                                  
         std::tuple<float *, float, float, float> scale;
 
         Eigen::MatrixXf ss_model0_inv;

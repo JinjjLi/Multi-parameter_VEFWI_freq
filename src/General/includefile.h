@@ -10,12 +10,18 @@
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 #include <Eigen/SparseLU>
+//#include <Eigen/PardisoSupport>
+//#include <Eigen/UmfPackSupport>
 #include <vector>
 #include <fstream>
 #include <iomanip>
 #include <time.h>
 #include <chrono>
 #include <omp.h>
+
+#define EIGEN_ENABLE_AVX512
+#define EIGEN_USE_BLAS
+#define EIGEN_USE_LAPACKE
 
 const float pi = 3.1415926;
 

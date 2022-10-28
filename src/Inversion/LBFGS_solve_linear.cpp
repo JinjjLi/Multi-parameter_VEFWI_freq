@@ -1,16 +1,14 @@
 #include "../General/includefile.h"
 #include "LBFGS_solve_linear.h"
 #include "General_VE_Hvprod.h"
+#include "VE_Hvprod.h"
 #include "BFGSprod.h"
 
 Eigen::MatrixXf LBFGS_solve_linear(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmodel0, \
                                    Eigen::MatrixXf& b, Eigen::RowVectorXf& frequency, \
             float omega0, int nz, int nx, int dz, int PML_thick, Eigen::SparseMatrix<float>& R, \
-            std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf>& sz, \
-            std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf>& sx, \
-            std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf>& MT_sur, \
+            Eigen::SparseMatrix<float>& S, \
             Eigen::MatrixXcf& fwave, float reg_fac, float stabregfac, \
-            std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf>& ind, \
             std::tuple<float *, float, float, float>& scale, \
             Eigen::SparseMatrix<float>& P, Eigen::SparseMatrix<float>& P_big, float tol, int maxits){
 
@@ -20,6 +18,7 @@ Eigen::MatrixXf LBFGS_solve_linear(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmo
     Eigen::MatrixXf u_best = Eigen::MatrixXf(r.rows(), u.cols());
     u_best.setZero();
     float initnorm = b.norm();
+    b.resize(0, 0);
     Eigen::MatrixXf ustore = Eigen::MatrixXf(u.rows(), maxits);
     Eigen::MatrixXf rstore = Eigen::MatrixXf(u.rows(), maxits);
     ustore.setZero();
@@ -52,7 +51,7 @@ Eigen::MatrixXf LBFGS_solve_linear(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmo
             Eigen::MatrixXf partial_rstore = rstore.leftCols(n + 1);
             Eigen::MatrixXf partial_ustore = ustore.leftCols(n + 1);
             spdiags_noncomplex<float>(H0, Eigen::MatrixXf::Constant(u.rows(), u.cols(), ind), \
-                                                               Eigen::MatrixXi::Zero(1, 1), \
+                                                               Eigen::ArrayXi::Zero(1, 1), \
                                                                u.rows(), u.rows());
             p = BFGSprod(r, partial_rstore, partial_ustore, H0);
             send.resize(0, 0); yend.resize(0, 0);
@@ -68,7 +67,7 @@ Eigen::MatrixXf LBFGS_solve_linear(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmo
             if ((yend.transpose() * yend).value() == 0.0)
                 ind = 0.0;
             spdiags_noncomplex<float>(H0, Eigen::MatrixXf::Constant(u.rows(), u.cols(), ind), \
-                                                               Eigen::MatrixXi::Zero(1, 1), \
+                                                               Eigen::ArrayXi::Zero(1, 1), \
                                                                u.rows(), u.rows());
             p = BFGSprod(r, rstore, ustore, H0);
             send.resize(0, 0); yend.resize(0, 0);
@@ -79,13 +78,13 @@ Eigen::MatrixXf LBFGS_solve_linear(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmo
             p = r;
 
         //Eigen::MatrixXf Hp = VE_Hvprod(model, ssmodel0, p, frequency, omega0, \
-        //                                                  nz, nx, dz, PML_thick, R, sz, sx, \
-        //                                                  MT_sur, fwave, reg_fac, stabregfac, \
-        //                                                  ind, scale, P, P_big);
+        //                                                  nz, nx, dz, PML_thick, R, S, \
+        //                                                  fwave, reg_fac, stabregfac, \
+        //                                                  scale, P, P_big);
         Eigen::MatrixXf Hp = General_VE_Hvprod(model, ssmodel0, p, frequency, omega0, \
-                                                          nz, nx, dz, PML_thick, R, sz, sx, \
-                                                          MT_sur, fwave, reg_fac, stabregfac, \
-                                                          ind, scale, P, P_big);
+                                                          nz, nx, dz, PML_thick, R, S, \
+                                                          fwave, reg_fac, stabregfac, \
+                                                          scale, P, P_big);
         float alpha = -(r.transpose().cast<double>() * p.cast<double>()).value() / \
                       (p.transpose().cast<double>() * Hp.cast<double>()).value();
 
@@ -109,10 +108,11 @@ Eigen::MatrixXf LBFGS_solve_linear(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmo
             converged = 1;   
         mat.resize(0, 0);
     }
-        u.resize(0, 0); r.resize(0, 0); ustore.resize(0, 0); rstore.resize(0, 0);
-        p.resize(0, 0); 
-        H0.resize(0, 0); H0.data().squeeze();
-        
-        return u_best;
+    u.resize(0, 0); r.resize(0, 0); ustore.resize(0, 0); rstore.resize(0, 0);
+    p.resize(0, 0); 
+    H0.resize(0, 0); H0.data().squeeze();
+    resvec.clear(); resvec.shrink_to_fit();
+    
+    return u_best;
 }
 

@@ -7,18 +7,16 @@ float Linesearch_Nocedal_Full_new(Eigen::MatrixXf &x0, Eigen::MatrixXf& descentd
                                   float c1, float c2, float alpha0, Eigen::RowVectorXf& freq, \
                                   Eigen::MatrixXcf& fwave, float omega0, \
                                   Eigen::MatrixXf& ssmodel0, std::vector<Eigen::SparseMatrix<std::complex<float>>>& D, Eigen::SparseMatrix<float>& R, \
-                                  std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf>& sz, std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf>& sx, \
-                                  std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf>& MT_sur, \
+                                  Eigen::SparseMatrix<float>& S, \
                                   int nz, int nx, int dz, int PML_thick, \
-                                  std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf>& ind, \
                                   std::tuple<float *, float, float, float>& scale, Eigen::SparseMatrix<float>& P){
     float alpha = alpha0;
     float alphaprev = 0.0;
     float phi0; 
     Eigen::MatrixXf grad0;
     std::tie(phi0, grad0) = VE_Gradient(freq, fwave, omega0, x0, \
-                                              ssmodel0, D, R, sz, sx, MT_sur, \
-                                              nz, nx, dz, PML_thick, ind, scale, P);
+                                              ssmodel0, D, R, S, \
+                                              nz, nx, dz, PML_thick, scale, P);
     std::cout << "Initial objective function is: " << phi0 << std::endl;
     float phiprev = phi0;
     float g0 = (grad0.transpose() * descentd).value();
@@ -34,16 +32,16 @@ float Linesearch_Nocedal_Full_new(Eigen::MatrixXf &x0, Eigen::MatrixXf& descentd
         while (i < 10){
             x0temp = x0 + alpha * descentd;
             std::tie(phi, grad) = VE_Gradient(freq, fwave, omega0, x0temp, \
-                                                     ssmodel0, D, R, sz, sx, MT_sur, \
-                                                     nz, nx, dz, PML_thick, ind, scale, P);
+                                                     ssmodel0, D, R, S, \
+                                                     nz, nx, dz, PML_thick, scale, P);
             int whileit = 0;
             while (isinf(phi)){
                 whileit++;
                 alpha /= 2.0;
                 x0temp = x0 + alpha * descentd;
                 std::tie(phi, grad) = VE_Gradient(freq, fwave, omega0, x0temp, \
-                                                         ssmodel0, D, R, sz, sx, MT_sur, \
-                                                         nz, nx, dz, PML_thick, ind, scale, P);
+                                                         ssmodel0, D, R, S, \
+                                                         nz, nx, dz, PML_thick, scale, P);
                 if (whileit >= 10)
                     phi = 0.0;
             }
@@ -56,8 +54,8 @@ float Linesearch_Nocedal_Full_new(Eigen::MatrixXf &x0, Eigen::MatrixXf& descentd
                 alphastar = Zoom_Nocedal_Count_new(x0, descentd, c1, c2, phi0, g0, alphaprev, \
                                                    alpha, phiprev, phi, gprev, g, \
                                                    freq, fwave, omega0, ssmodel0, D, R, \
-                                                   sz, sx, MT_sur, nz, nx, dz, PML_thick, \
-                                                   ind, scale, P);
+                                                   S, nz, nx, dz, PML_thick, \
+                                                   scale, P);
                 found = 1;
                 break;
             }
@@ -72,8 +70,8 @@ float Linesearch_Nocedal_Full_new(Eigen::MatrixXf &x0, Eigen::MatrixXf& descentd
                 alphastar = Zoom_Nocedal_Count_new(x0, descentd, c1, c2, phi0, g0, alphaprev, \
                                                    alpha, phiprev, phi, gprev, g, \
                                                    freq, fwave, omega0, ssmodel0, D, R, \
-                                                   sz, sx, MT_sur, nz, nx, dz, PML_thick, \
-                                                   ind, scale, P);
+                                                   S, nz, nx, dz, PML_thick, \
+                                                   scale, P);
                 found = 1;
                 break;
             }
@@ -92,8 +90,8 @@ float Linesearch_Nocedal_Full_new(Eigen::MatrixXf &x0, Eigen::MatrixXf& descentd
     }
     x0temp = x0 + alphastar * descentd;
     std::tie(phi, std::ignore) = VE_Gradient(freq, fwave, omega0, x0temp, \
-                                             ssmodel0, D, R, sz, sx, MT_sur, \
-                                             nz, nx, dz, PML_thick, ind, scale, P);
+                                             ssmodel0, D, R, S, \
+                                             nz, nx, dz, PML_thick,scale, P);
     std::cout << "Objective function after line search is: " << phi << std::endl;
     grad0.resize(0, 0); grad.resize(0, 0);
     x0temp.resize(0, 0);

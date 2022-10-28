@@ -1,0 +1,35 @@
+#include "../General/includefile.h"
+#include "BFGSprod.h"
+
+Eigen::MatrixXf BFGSprod(Eigen::MatrixXf& v, Eigen::MatrixXf& gstore, Eigen::MatrixXf& mstore, Eigen::SparseMatrix<float>& H0){
+    Eigen::MatrixXf q = v;
+    Eigen::MatrixXf y(gstore.rows(), 1);
+    Eigen::MatrixXf s(gstore.rows(), 1);
+    y.setZero(); s.setZero();
+    float rho;
+    float alpha;
+    float beta;
+    int i = gstore.cols() - 2;
+    Eigen::MatrixXf r(gstore.rows(), 1);
+    Eigen::MatrixXf tmp(gstore.rows(), 1);
+    r.setZero();
+    tmp.setZero();
+
+    while(i >= 0){
+        y = gstore.col(i + 1) - gstore.col(i);
+        s = mstore.col(i + 1) - mstore.col(i);
+        rho = 1.0 / ((y.transpose() * s).value());
+        alpha = (s.transpose() * q).value();
+        alpha *= rho;
+        q -= alpha * y;
+        r += H0 * q;
+        beta += (rho * y.transpose() * r).value();
+        tmp = s * (alpha - beta);
+        r += tmp;
+        i--;
+    }
+    //Eigen::MatrixXf r = H0 * q + tmp;
+    q.resize(0, 0); y.resize(0, 0); s.resize(0, 0);
+    return r;
+}
+

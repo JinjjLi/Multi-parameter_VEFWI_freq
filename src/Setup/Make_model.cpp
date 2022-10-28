@@ -20,7 +20,7 @@ std::tuple<Eigen::MatrixXf, Eigen::MatrixXf> Make_model(int nz, int nx, int type
     model0.col(1) = vp_0.array(); model0.col(2) = Qp_inv_0.array();
     model0.col(3) = vs_0.array(); model0.col(4) = Qs_inv_0.array();
    
-    int center_x = 25; int center_z = 25; int R = 8;
+    int center_x = 15; int center_z = 15; int R = 4;
     
     Eigen::MatrixXf model_true = Eigen::MatrixXf::Constant(nz * nx, 5, 0.0);
     

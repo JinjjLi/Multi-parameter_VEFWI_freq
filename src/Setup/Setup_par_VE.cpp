@@ -2,41 +2,13 @@
 
 Setup_par_VE::Setup_par_VE(){
 
-    //nx = 50; nz = 50; modeltype = 2;
-    //PML_thick = 10;
-    //nxPML = nx + 2 * PML_thick; nzPML = nz + 2 * PML_thick;
-    //NN = nz * nx; NPML = nzPML * nxPML;
-    //dx = 10; dz = 10;
-
-    //sAcq = 1; rAcq = 1;
-    //roffset = 0; 
-    //soffset = 0;
-
-    //P_grid = 1;
-    //P_smooth = 2;
-
-    //nP = 2;
-
-    //numbands = 6; step = 10;
-    //startband = 1.0;
-    //endband1 = 2.0;
-    //endbandend = 15.0;
-    //
-    //Amp_scale = 1.0;
-    //
-    //omega0 = 2 * pi * 30;
-
-
-    //std::cout << "Parameter settled." << std::endl;
-
     Read_par();
-    Get_model();
+    //Get_model();
+    Read_model();
     Get_Acq();
-    std::tie(S_sur, std::ignore) = Make_General_source(sx_sur, sz_sur, M11_sur, M12_sur, M22_sur, nz, nx, PML_thick);
-    R = Define_MC_point_receivers(rz, rx, nz, nx, PML_thick);
+    std::tie(S, R) = Define_Acquisition_Explosive(sz, sx, rz, rx, nx, nz, PML_thick);
     Get_select_P();
     Get_freqs();
-    Get_inds();
 }
 
 Setup_par_VE::~Setup_par_VE(){
@@ -44,11 +16,10 @@ Setup_par_VE::~Setup_par_VE(){
     P.resize(0, 0); P.data().squeeze();
     P_big.resize(0, 0); P_big.data().squeeze();
     model0.resize(0, 0); model_true.resize(0, 0);
-    sx_sur.resize(0); sx_SWD.resize(0); sz_sur.resize(0); sz_SWD.resize(0);
+    sx.resize(0); sz.resize(0);
     rx.resize(0); rz.resize(0);
     R.resize(0, 0); R.data().squeeze();
-    M11_sur.resize(0); M12_sur.resize(0); M22_sur.resize(0);
-    S_sur.resize(0, 0); S_sur.data().squeeze();
+    S.resize(0, 0); S.data().squeeze();
     freq.resize(0); fwave.resize(0, 0);
 
     std::cout << "Parameter object destroyed." << std::endl;
@@ -57,9 +28,9 @@ Setup_par_VE::~Setup_par_VE(){
 void Setup_par_VE::Read_par(){
 
     std::ifstream f1;
-    f1.open("../data/parameter.txt");
+    f1.open("./data/parameter.txt");
     if(!f1){
-        std::cout << "?" << std::endl;
+        std::cout << "Error reading parameters!!!" << std::endl;
         exit(0);
     }
     while(!f1.eof()){
@@ -74,6 +45,8 @@ void Setup_par_VE::Read_par(){
         f1 >> startband; f1 >> endband1; f1 >> endbandend;
         f1 >> Amp_scale;
         f1 >> f0;
+        f1 >> model_true_name;
+        f1 >> model0_name;
     }
     std::cout << "Reading over." << std::endl;
     f1.close();
@@ -94,13 +67,15 @@ void Setup_par_VE::Read_par(){
     std::cout << "endbandend =   " << endbandend << std::endl;
     std::cout << "Amp_scale =   " << Amp_scale << std::endl;
     std::cout << "Omega0 = " << omega0 << std::endl;
+    std::cout << "model_true = " << model_true_name << std::endl;
+    std::cout << "model0 = " << model0_name << std::endl;
     std::cout << "**************************" << std::endl;
-
 }
 
 
 void Setup_par_VE::Get_model(){
     std::tie(model0, model_true) = Make_model(nz, nx, modeltype);
+    //Read_model(nz, nx, modeltype);
     model0.block(NN, 0, NN, 1) = model0.block(NN, 0, NN, 1).array().abs2().inverse();
     model0.block(3 * NN, 0, NN, 1) = model0.block(3 * NN, 0, NN, 1).array().abs2().inverse();
     model_true.block(NN, 0, NN, 1) = model_true.block(NN, 0, NN, 1).array().abs2().inverse();
@@ -111,110 +86,48 @@ void Setup_par_VE::Get_model(){
 
 void Setup_par_VE::Read_model(){
 
-    Eigen::MatrixXf vp_true(nz * nx, 1);
-    Eigen::MatrixXf vs_true(nz * nx, 1);
-    Eigen::MatrixXf Qp_true(nz * nx, 1);
-    Eigen::MatrixXf Qs_true(nz * nx, 1);
-    Eigen::MatrixXf rho_true(nz * nx, 1);
-    
-    std::ifstream truevp("../data/truemodels/vp_true_300x100.dat", std::ios::in | std::ios::binary);
-    if(truevp){
-        while(!truevp.eof()){
-            for (int i = 0; i < nz * nx; i++)
-                truevp >> vp_true(i, 0);
+    model_true = Eigen::MatrixXf::Zero(nz * nx * 5, 1);
+
+    //std::ifstream truemodel("../data/model_true_Mar_300x150.dat", std::ios::in | std::ios::binary);
+    std::ifstream truemodel(model_true_name, std::ios::in | std::ios::binary);
+    if(truemodel){
+        while(!truemodel.eof()){
+            for (int i = 0; i < 5 * nz * nx; i++)
+                truemodel >> model_true(i, 0);
         }
-        truevp.close();
+        truemodel.close();
     }
     else{
-        std::cout << "?" << std::endl;
-        exit(0);
-    }
-    std::ifstream truevs("../data/truemodels/vs_true_300x100.dat", std::ios::in | std::ios::binary);
-    if(truevs){
-        while(!truevs.eof()){
-            for (int i = 0; i < nz * nx; i++)
-                truevs >> vs_true(i, 0);
-        }
-        truevs.close();
-    }
-    else{
-        std::cout << "?" << std::endl;
-        exit(0);
-    }
-    std::ifstream trueQp("../data/truemodels/Qp_true_300x100.dat", std::ios::in | std::ios::binary);
-    if(trueQp){
-        while(!trueQp.eof()){
-            for (int i = 0; i < nz * nx; i++)
-                trueQp >> Qp_true(i, 0);
-        }
-        trueQp.close();
-    }
-    else{
-        std::cout << "?" << std::endl;
-        exit(0);
-    }
-    std::ifstream trueQs("../data/truemodels/Qs_true_300x100.dat", std::ios::in | std::ios::binary);
-    if(trueQs){
-        while(!trueQs.eof()){
-            for (int i = 0; i < nz * nx; i++)
-                trueQs >> Qs_true(i, 0);
-        }
-        trueQs.close();
-    }
-    else{
-        std::cout << "?" << std::endl;
-        exit(0);
-    }
-    std::ifstream truerho("../data/truemodels/rho_true_300x100.dat", std::ios::in | std::ios::binary);
-    if(truerho){
-        while(!truerho.eof()){
-            for (int i = 0; i < nz * nx; i++)
-                truerho >> rho_true(i, 0);
-        }
-        truerho.close();
-    }
-    else{
-        std::cout << "?" << std::endl;
+        std::cout << "Error reading models!!!" << std::endl;
         exit(0);
     }
 
-    Eigen::MatrixXf model0 = Eigen::MatrixXf::Constant(nz * nx, 5, 0.0);
-    Eigen::MatrixXf vp_0 = Eigen::MatrixXf::Constant(nz, nx, vp_true(0, 0));
-    Eigen::MatrixXf vs_0 = Eigen::MatrixXf::Constant(nz, nx, vs_true(0, 0));
-    Eigen::MatrixXf rho_0 = Eigen::MatrixXf::Constant(nz, nx, rho_true(0, 0));
-    Eigen::MatrixXf Qp_inv_0 = Eigen::MatrixXf::Constant(nz, nx, Qp_true(0, 0));
-    Eigen::MatrixXf Qs_inv_0 = Eigen::MatrixXf::Constant(nz, nx, Qs_true(0, 0));
+    model0 = Eigen::MatrixXf::Zero(nz * nx * 5, 1);
+    //std::ifstream backmodel("../data/model0_Mar_300x150.dat", std::ios::in | std::ios::binary);
+    std::ifstream backmodel(model0_name, std::ios::in | std::ios::binary);
+    if(backmodel){
+        while(!backmodel.eof()){
+            for (int i = 0; i < 5 * nz * nx; i++)
+                backmodel >> model0(i, 0);
+        }
+        backmodel.close();
+    }
+    else{
+        std::cout << "?" << std::endl;
+        exit(0);
+    }
     
-    model0.col(0) = rho_0.array();
-    model0.col(1) = vp_0.array(); model0.col(2) = Qp_inv_0.array();
-    model0.col(3) = vs_0.array(); model0.col(4) = Qs_inv_0.array();
-   
-    Eigen::MatrixXf model_true = Eigen::MatrixXf::Constant(nz * nx, 5, 0.0);
-    model_true.col(0) = rho_true.array(); model_true.col(1) = vp_true.array(); model_true.col(2) = Qp_inv_0.array();
-    model_true.col(3) = vs_0.array(); model_true.col(4) = Qs_inv_0.array();
-    
-    
-    vp_true.resize(0, 0); rho_true.resize(0, 0); vs_true.resize(0, 0);
-    Qp_true.resize(0, 0); Qs_true.resize(0, 0);
-    vp_0.resize(0, 0); rho_0.resize(0, 0); vs_0.resize(0, 0);
-    Qp_inv_0.resize(0, 0); Qs_inv_0.resize(0, 0);
+    model0.block(NN, 0, NN, 1) = model0.block(NN, 0, NN, 1).array().abs2().inverse();
+    model0.block(3 * NN, 0, NN, 1) = model0.block(3 * NN, 0, NN, 1).array().abs2().inverse();
+    model_true.block(NN, 0, NN, 1) = model_true.block(NN, 0, NN, 1).array().abs2().inverse();
+    model_true.block(3 * NN, 0, NN, 1) = model_true.block(3 * NN, 0, NN, 1).array().abs2().inverse();
 
-    model0.resize(nz * nx * 5, 1);
-    model_true.resize(nz * nx * 5, 1);
     std::cout << "Model done." << std::endl;
 
 }
 
 void Setup_par_VE::Get_Acq(){
-    std::tie(sx_sur, sx_SWD, sz_sur, sz_SWD, rx, rz) = Set_Acq(sAcq, soffset, rAcq, roffset, nz, nx);
-    sx = std::make_tuple(sx_sur, sx_SWD);
-    sz = std::make_tuple(sz_sur, sz_SWD);
-    ns_sur = sx_sur.size(); ns_SWD = sx_SWD.size();
-
-    M11_sur = Eigen::RowVectorXf::Constant(ns_sur, 1.0);
-    M12_sur = Eigen::RowVectorXf::Constant(ns_sur, 0.0);
-    M22_sur = Eigen::RowVectorXf::Constant(ns_sur, 1.0);
-
+    std::tie(sx, sz, rx, rz) = Set_Acq_Explosive(sAcq, soffset, rAcq, roffset, nz, nx);
     std::cout << "Acquisition defined." << std::endl;
 }
 
@@ -267,24 +180,10 @@ void Setup_par_VE::Get_freqs(){
     for (int n = 0; n < numbands; n++)
         freq.block(0, n * step, 1, step) = Eigen::RowVectorXf::LinSpaced(step, startfreq(n), endfreq(n));
 
-    fwave = Eigen::MatrixXcf::Ones(freq.size(), S_sur.cols());
+    fwave = Eigen::MatrixXcf::Ones(freq.size(), S.cols());
 
     startfreq.resize(0); endfreq.resize(0);
 
     std::cout << "Freq end." << std::endl;
 }
 
-void Setup_par_VE::Get_inds(){
-
-    Eigen::RowVectorXf ind_model = Eigen::RowVectorXf::LinSpaced(P.cols(), 0, P.cols() - 1);
-    Eigen::RowVectorXf ind_M11 = Eigen::RowVectorXf::LinSpaced(ns_sur, P.cols(), P.cols() + ns_sur - 1);
-    Eigen::RowVectorXf ind_M12 = Eigen::RowVectorXf::LinSpaced(ns_sur, P.cols() + ns_sur, P.cols() + 2 * ns_sur - 1);
-    Eigen::RowVectorXf ind_M22 = Eigen::RowVectorXf::LinSpaced(ns_sur, P.cols() + 2 * ns_sur, P.cols() + 3 * ns_sur - 1);
-    ind = std::make_tuple(ind_model, ind_M11, ind_M12, ind_M22);
-
-    ind_model.resize(0);
-    ind_M11.resize(0);
-    ind_M12.resize(0);
-    ind_M22.resize(0);
-
-}

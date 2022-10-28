@@ -232,6 +232,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term1ad, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term1ad.resize(0, 0);
 
         th = 0;
         visit_lambda(ind1mi + offset, [&indices, th](int v, int i, int j){
@@ -254,6 +255,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term1mi, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term1mi.resize(0, 0);
 
         th = 0;
         visit_lambda(ind2 + offset, [&indices, th](int v, int i, int j){
@@ -276,6 +278,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term2, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term2.resize(0, 0);
 
         th = 0;
         visit_lambda(ind3ad + offset, [&indices, th](int v, int i, int j){
@@ -298,6 +301,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term3ad, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term3ad.resize(0, 0);
 
         th = 0;
         visit_lambda(ind3mi + offset, [&indices, th](int v, int i, int j){
@@ -320,6 +324,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term3mi, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term3mi.resize(0, 0);
 
         th = 0;
         visit_lambda(ind4 + offset, [&indices, th](int v, int i, int j){
@@ -342,6 +347,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term4, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term4.resize(0, 0);
 
         th = 0;
         visit_lambda(ind5 + offset, [&indices, th](int v, int i, int j){
@@ -364,6 +370,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term5, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term5.resize(0, 0);
 
         th = 0;                                                                                                                                                             
         visit_lambda(ind6 + offset, [&indices, th](int v, int i, int j){
@@ -386,6 +393,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term6, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term6.resize(0, 0);
 
         th = 0;
         visit_lambda(ind7ad + offset, [&indices, th](int v, int i, int j){
@@ -408,6 +416,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term7ad, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term7ad.resize(0, 0);
 
         th = 0;
         visit_lambda(ind7mi + offset, [&indices, th](int v, int i, int j){
@@ -430,6 +439,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term7mi, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term7mi.resize(0, 0);
 
         th = 0;
         visit_lambda(ind8 + offset, [&indices, th](int v, int i, int j){
@@ -452,6 +462,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term8, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term8.resize(0, 0);
 
         th = 0;
         visit_lambda(ind9ad + offset, [&indices, th](int v, int i, int j){
@@ -474,6 +485,7 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term9ad, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term9ad.resize(0, 0);
 
         th = 0;
         visit_lambda(ind9mi + offset, [&indices, th](int v, int i, int j){
@@ -496,12 +508,8 @@ Eigen::MatrixXf IP_dpSA_B(Eigen::SparseMatrix<std::complex<float>>& A, Eigen::Sp
             += mat_indexing(term9mi, \
                             Eigen::ArrayXi::LinSpaced(maxind - minind + 1, minind, maxind), \
                             Eigen::ArrayXi::Zero(1));
+        term9mi.resize(0, 0);
 
-        term1ad.resize(0, 0); term1mi.resize(0, 0); term2.resize(0, 0);
-        term3ad.resize(0, 0); term3mi.resize(0, 0); term4.resize(0, 0);
-        term5.resize(0, 0); term6.resize(0, 0);
-        term7ad.resize(0, 0); term7mi.resize(0, 0);
-        term8.resize(0, 0); term9ad.resize(0, 0); term9mi.resize(0, 0); 
         indices.shrink_to_fit();
     }
 

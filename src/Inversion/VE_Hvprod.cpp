@@ -9,39 +9,19 @@
 
 Eigen::MatrixXf VE_Hvprod(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmodel0, Eigen::MatrixXf& v, Eigen::RowVectorXf& frequency, \
                                  float omega0, int nz, int nx, int dz, int PML_thick, Eigen::SparseMatrix<float>& R, \
-                                 std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf>& sz, \
-                                 std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf>& sx, \
-                                 std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf>& MT_sur, \
+                                 Eigen::SparseMatrix<float>& S, \
                                  Eigen::MatrixXcf& fwave, float reg_fac, float stabregfac,\
-                                 std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf>& ind, \
                                  std::tuple<float *, float, float, float>& scale, \
                                  Eigen::SparseMatrix<float>& P, Eigen::SparseMatrix<float>& P_big){
     
-    Eigen::RowVectorXf sx_sur;
-    Eigen::RowVectorXf sz_sur;
-    
-    std::tie(sx_sur, std::ignore) = sx;
-    std::tie(sz_sur, std::ignore) = sz;
-
-    int ns = sx_sur.size();
-    
     float * scalem; float scaleS, scale_mod, scaleSM;
     std::tie(scalem, scaleS, scale_mod, scaleSM) = scale;
-    Eigen::RowVectorXf ss_ind, ind_M11, ind_M12, ind_M22;
-    std::tie(ss_ind, ind_M11, ind_M12, ind_M22) = ind;
-
-    Eigen::RowVectorXf M11_sur, M12_sur, M22_sur;
-    std::tie(M11_sur, M12_sur, M22_sur) = MT_sur;
 
     int nzPML = nz + 2 * PML_thick; int nxPML = nx + 2 * PML_thick;
     int NPML = nzPML * nxPML;
-    Eigen::MatrixXf ssmodel = (ssmodel0 + P * model.block(0, 0, ss_ind.size(), 1)).array() * scale_mod;
-    Eigen::SparseMatrix<float> S_sur;
-    std::tie(S_sur, std::ignore) = Make_General_source(sx_sur, sz_sur, M11_sur, M12_sur, M22_sur, nz, nx, PML_thick);
-    Eigen::SparseMatrix<float> S = S_sur;
-    int ns_sur = sx_sur.size(); 
+    Eigen::MatrixXf ssmodel = ssmodel0 + P * model * scale_mod;
 
-    Eigen::MatrixXf vm = scale_mod * v.block(0, 0, ss_ind.size(), 1);
+    Eigen::MatrixXf vm = scale_mod * v;
 
     Eigen::MatrixXf prodm = Eigen::MatrixXf(vm.rows(), vm.cols());
     prodm.setZero();
@@ -57,7 +37,8 @@ Eigen::MatrixXf VE_Hvprod(Eigen::MatrixXf &model, Eigen::MatrixXf& ssmodel0, Eig
     Eigen::SparseMatrix<std::complex<float>> A(2 * nzPML * nxPML, 2 * nzPML * nxPML);
     Eigen::SparseMatrix<std::complex<float>> MA(A.rows(), A.cols()); 
     Eigen::SparseMatrix<std::complex<float>> Gs(nzPML * nxPML * 2, S.cols());
-    Eigen::SparseMatrix<std::complex<double>> Gs_temp(nzPML * nxPML * 2, S.cols());
+    //Eigen::SparseMatrix<std::complex<double>> Gs_temp(nzPML * nxPML * 2, S.cols());
+    Eigen::SparseMatrix<std::complex<float>> Gs_temp(nzPML * nxPML * 2, S.cols());
 
     typedef Eigen::Triplet<float> T;
     std::vector<T> triplets;          
@@ -79,10 +60,12 @@ Eigen::initParallel();
                                                                   scalem);
         bool flag_A = Assemble_Helm(nzPML, nxPML, A, MADI[0]);
         
-        Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>> solver(A.cast<std::complex<double>>());
+        //Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>> solver(A.cast<std::complex<double>>());
+        Eigen::SparseLU<Eigen::SparseMatrix<std::complex<float>>> solver(A);
 
-        Gs_temp = solver.solve((S * fwave(iii, 0)).cast<std::complex<double>>());
-        Gs = Gs_temp.cast<std::complex<float>>();
+        //Gs_temp = solver.solve((S * fwave(iii, 0)).cast<std::complex<double>>());
+        //Gs = Gs_temp.cast<std::complex<float>>();
+        Gs = solver.solve(S * fwave(iii, 0));
 
         bool flag_new = MADI_P(nzPML, NPML, MADI_new, MADI, P_big);
 
@@ -111,16 +94,18 @@ Eigen::initParallel();
         Eigen::SparseMatrix<std::complex<float>> phi = -MA * Gs;
 
         Eigen::SparseMatrix<std::complex<float>> J(A.rows(), phi.size());
-        Eigen::SparseMatrix<std::complex<double>> J_temp(A.rows(), phi.size());
-        J_temp = solver.solve(phi.cast<std::complex<double>>());
-        J = J_temp.cast<std::complex<float>>();;
+        //Eigen::SparseMatrix<std::complex<double>> J_temp(A.rows(), phi.size());
+        //J_temp = solver.solve(phi.cast<std::complex<double>>());
+        //J = J_temp.cast<std::complex<float>>();;
+        J = solver.solve(phi);
                                                      
         Eigen::SparseMatrix<std::complex<float>> xi(R.rows(), J.cols());                                                                                                                                                                                                                             
-        Eigen::SparseMatrix<std::complex<double>> xii(R.rows(), J.cols());
-        Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>> solver2(-A.adjoint().cast<std::complex<double>>());
-        xii = solver2.solve((R.transpose() * R * J).cast<std::complex<double>>());
-        xi = xii.cast<std::complex<float>>();
-
+        //Eigen::SparseMatrix<std::complex<double>> xii(R.rows(), J.cols());
+        //Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>> solver2(-A.adjoint().cast<std::complex<double>>());
+        //xii = solver2.solve((R.transpose() * R * J).cast<std::complex<double>>());
+        Eigen::SparseLU<Eigen::SparseMatrix<std::complex<float>>> solver2(-A.adjoint());
+        //xi = xii.cast<std::complex<float>>();
+        xi = solver2.solve((R.transpose() * R * J));
         prodm += scale_mod * IP_dpSA_B_P( Gs, xi, MADI_new, nz, nx, PML_thick); 
 
         for (int i = 0; i < 26; i++)
@@ -133,9 +118,9 @@ Eigen::initParallel();
         Gs_temp.setZero();
         MADI_phi.resize(0, 0); 
         J.resize(0, 0); J.data().squeeze();
-        J_temp.resize(0, 0); J_temp.data().squeeze();
+        //J_temp.resize(0, 0); J_temp.data().squeeze();
         xi.resize(0, 0); xi.data().squeeze();
-        xii.resize(0, 0); xii.data().squeeze();
+        //xii.resize(0, 0); xii.data().squeeze();
         v_sparse.resize(0, 0); v_sparse.data().squeeze();
         product.resize(0, 0); product.data().squeeze();
     }
@@ -144,27 +129,26 @@ Eigen::initParallel();
     prod.setZero();
     prod.block(0, 0, vm.size(), 1) = prodm;
 
-    float reg_scale0 = prod.cast<double>().norm() / v.cast<double>().norm();
-    if (v.cast<double>().norm() == 0)
+    //float reg_scale0 = prod.cast<double>().norm() / v.cast<double>().norm();
+    //if (v.cast<double>().norm() == 0)
+    //    reg_scale0 = 0.0;
+    float reg_scale0 = prod.norm() / v.norm();
+    if (v.norm() == 0)
         reg_scale0 = 0.0;
     float reg_scale = reg_scale0;
     Eigen::SparseMatrix<float> rH(model.size(), model.size());
     bool flag_rH = Diff0_Reg_and_diag_source(model, reg_fac, stabregfac, \
                                                               nz, nx, rH, P, reg_scale);
-    Eigen::MatrixXd prodtemp = rH.cast<double>() * v.cast<double>();
-    prod += prodtemp.cast<float>();
+    //Eigen::MatrixXd prodtemp = rH.cast<double>() * v.cast<double>();
+    Eigen::MatrixXf prodtemp = rH * v;
+    //prod += prodtemp.cast<float>();
+    prod += prodtemp;
 
     A.resize(0, 0); A.data().squeeze();
     Gs.resize(0, 0); Gs.data().squeeze();
     Gs_temp.resize(0, 0); Gs_temp.data().squeeze();
     MA.resize(0, 0); MA.data().squeeze();
-    sx_sur.resize(0); sz_sur.resize(0);
-    S.resize(0, 0); S.data().squeeze();
-    S_sur.resize(0, 0); S_sur.data().squeeze();
     vm.resize(0, 0); 
-    ss_ind.resize(0); ind_M11.resize(0); 
-    ind_M12.resize(0); ind_M22.resize(0);
-    M11_sur.resize(0); M12_sur.resize(0); M22_sur.resize(0);
     ssmodel.resize(0, 0);
     prodm.resize(0, 0); 
     prodtemp.resize(0, 0);

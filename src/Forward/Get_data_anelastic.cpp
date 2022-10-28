@@ -15,7 +15,7 @@ bool Get_data_anelastic(std::vector<Eigen::SparseMatrix<std::complex<float>>>& D
     //std::vector<Eigen::MatrixXcf> D(freq.size());
 Eigen::initParallel();
 int nthreads = Eigen::nbThreads();
-//#pragma omp parallel firstprivate(R, U)
+#pragma omp parallel firstprivate(R)
 #pragma omp for
     for (int i = 0; i < freq.size(); i++)
         D[i] = R * U[i];

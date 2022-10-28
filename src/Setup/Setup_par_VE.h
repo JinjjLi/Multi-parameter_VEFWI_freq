@@ -6,9 +6,10 @@
 #include "../General/includefile.h" 
 #include "Make_General_source.h"
 #include "Define_MC_point_receivers.h"
-#include "Set_Acq.h"                                                                                                                                                
+#include "Set_Acq_Explosive.h"                                                                                                                                                
 #include "Make_model.h"
 #include "Make_P_sparse_alt.h"
+#include "Define_Acquisition_Explosive.h"
 
 
 class Setup_par_VE
@@ -30,6 +31,9 @@ class Setup_par_VE
         float startband, endband1, endbandend;
         float omega0;
         float f0;
+
+        char model_true_name[100];
+        char model0_name[100];
         
         Eigen::SparseMatrix<float> P;
         Eigen::SparseMatrix<float> P_big;
@@ -37,23 +41,14 @@ class Setup_par_VE
         Eigen::MatrixXf model0;
         Eigen::MatrixXf model_true;
         
-        Eigen::RowVectorXf sx_sur, sx_SWD, sz_sur, sz_SWD;                                                                                                             
+        Eigen::RowVectorXf sx, sz;                                                                                                             
         Eigen::RowVectorXf rx, rz;
 
-        std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf> sx;
-        std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf> sz;
-	    Eigen::RowVectorXf M11_sur;
-	    Eigen::RowVectorXf M12_sur;
-	    Eigen::RowVectorXf M22_sur;
-
-        Eigen::SparseMatrix<float> S_sur;
-        Eigen::SparseMatrix<float> dS_sur;
+        Eigen::SparseMatrix<float> S;
         Eigen::SparseMatrix<float> R;
 
         Eigen::RowVectorXf freq;
         Eigen::MatrixXcf fwave;
-
-        std::tuple<Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf, Eigen::RowVectorXf> ind; 
 
         Setup_par_VE();
         virtual ~Setup_par_VE();
@@ -67,7 +62,6 @@ class Setup_par_VE
 
         void Get_select_P();
         void Get_freqs();
-        void Get_inds();
 
 };
 
