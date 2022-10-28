@@ -1,9 +1,0 @@
-Line 1: optimization type. Currently, we should only put 2 because only the truncated Gauss-Newton approach is implemented.
-
-Line 2: number of outer iterations. Model in each band should be updated with this number.
-
-Line 3: maximum iterations in approximating the inverse Hessian.
-
-Line 4: parameter that controls the optimization. This parameter does not to be changed in most scenarios.
-
-Line 5: regularization factor. This parameter does not to be changed as well.
